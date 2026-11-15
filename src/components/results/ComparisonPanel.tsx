@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { CiCard } from "@/components/results/CiCard";
+import { MathText } from "@/components/results/MathText";
 import { NumberLine } from "@/components/results/NumberLine";
 import type { Comparison, Results } from "@/hooks/useResults";
 import { explainDiffMeans, explainDiffProportions } from "@/lib/ciText";
@@ -32,7 +33,7 @@ export function ComparisonPanel({ results, comparison }: { results: Results; com
         interpretation={interpretDiffMeans(diffMeans, a.name, b.name)}
         parameter="μ₁ − μ₂"
         unit="ms"
-        badge={<Badge>{diffMeans.distribution === "z" ? "Z (n_A, n_B ≥ 30)" : "t con Sp (muestras pequeñas)"}</Badge>}
+        badge={<Badge><MathText text={diffMeans.distribution === "z" ? "Z (n_A, n_B ≥ 30)" : "t con Sp (muestras pequeñas)"} /></Badge>}
       >
         <NumberLine
           lower={diffMeans.lower}
