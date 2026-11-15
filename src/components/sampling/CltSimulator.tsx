@@ -131,7 +131,7 @@ export function CltSimulator() {
                   <ComposedChart data={sim.original}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="x" tickLine={false} />
-                    <YAxis width={40} tickFormatter={(v: number) => v.toFixed(3)} />
+                    <YAxis width={52} tickFormatter={(v: number) => v.toFixed(3)} />
                     <Bar dataKey="density" fill="var(--color-density)" radius={2} />
                   </ComposedChart>
                 </ChartContainer>
@@ -145,7 +145,7 @@ export function CltSimulator() {
                   <ComposedChart data={sim.sampling}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="x" tickLine={false} interval="preserveStartEnd" />
-                    <YAxis width={40} tickFormatter={(v: number) => v.toFixed(3)} />
+                    <YAxis width={52} tickFormatter={(v: number) => v.toFixed(3)} />
                     <Bar dataKey="density" fill="var(--color-density)" radius={2} />
                     <Line dataKey="normal" type="monotone" stroke="var(--color-normal)" strokeWidth={2} dot={false} />
                   </ComposedChart>

@@ -31,7 +31,7 @@ export function Histogram({ data, slaMs, color, title }: Props) {
         <BarChart data={rows} margin={{ left: 0, right: 8, top: 16 }}>
           <CartesianGrid vertical={false} />
           <XAxis dataKey="center" tickLine={false} axisLine={false} interval="preserveStartEnd" unit=" ms" />
-          <YAxis allowDecimals={false} width={32} />
+          <YAxis allowDecimals={false} width={40} />
           <ChartTooltip content={<ChartTooltipContent labelKey="range" />} />
           <Bar dataKey="count" fill="var(--color-count)" radius={2} />
           {slaBin && (

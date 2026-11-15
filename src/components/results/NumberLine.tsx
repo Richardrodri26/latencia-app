@@ -29,7 +29,7 @@ export function NumberLine({ lower, upper, estimate, reference, digits = 2, labe
       <div className="relative mx-2 h-12">
         <div className="absolute inset-x-0 top-8 h-px bg-border" />
         <div
-          className={`absolute top-[26px] h-3 rounded-full ${contains ? "bg-muted-foreground/60" : "bg-primary"}`}
+          className={`absolute top-[26px] h-3 rounded-full ${contains ? "bg-muted-foreground" : "bg-primary"}`}
           style={{ left: left(lower), width: `${pct(upper) - pct(lower)}%` }}
         />
         <div className="absolute top-[18px] h-7 w-0.5 -translate-x-1/2 bg-destructive" style={{ left: left(reference) }} />
