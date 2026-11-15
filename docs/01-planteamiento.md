@@ -10,24 +10,25 @@ Elegir el proveedor solo por lo que dice su página comercial es riesgoso: el ti
 
 ## Pregunta de investigación
 
-Desde nuestra red, ¿cuál es el **tiempo medio de respuesta** real de cada API, qué tan **estable** es, qué **proporción de peticiones incumple el SLA** y existe una **diferencia real** entre A y B?
+Desde nuestra red, ¿cuál es el **tiempo medio de respuesta** real de cada API, qué **proporción de peticiones incumple el SLA** y existe una **diferencia real** entre A y B?
 
 ## Objetivos
 
-**General:** estimar mediante intervalos de confianza el desempeño (tiempo de respuesta) de dos APIs públicas para apoyar la elección de proveedor, usando una aplicación web propia que recolecta y analiza los datos.
+**General:** estimar mediante intervalos de confianza, y contrastar con una prueba de hipótesis, el desempeño (tiempo de respuesta) de dos APIs públicas para apoyar la elección de proveedor, usando una aplicación web propia que recolecta y analiza los datos.
 
 **Específicos:**
 
 | # | Objetivo | Unidad |
 |---|----------|--------|
 | 1 | Mostrar la distribución muestral de la media y la proporción (TLC) a partir de los datos medidos | I |
-| 2 | Estimar puntualmente media, varianza y proporciones; calcular el error estándar | II |
+| 2 | Estimar puntualmente la media, la varianza muestral (s² = SS/(n − 1)) y las proporciones; calcular el error estándar | II |
 | 3 | Determinar el tamaño de muestra necesario a partir de una prueba piloto | II |
-| 4 | Construir IC para la media, la varianza/desviación y la proporción de cada API | III |
-| 5 | Construir IC para la diferencia de medias, la razón de varianzas y la diferencia de proporciones entre A y B | III |
-| 6 | Interpretar los intervalos y recomendar un proveedor | III |
+| 4 | Construir IC para la media (Z con s si n ≥ 30; t si n < 30) y para la proporción de cada API | III |
+| 5 | Construir IC para la diferencia de medias y la diferencia de proporciones entre A y B («si el IC contiene al cero, no hay diferencias») | III |
+| 6 | Contrastar con una prueba de hipótesis la diferencia de medias μ_A − μ_B (procedimiento de clase en 4 pasos, Z.A./R.C., p-valor) | IV |
+| 7 | Interpretar los resultados y recomendar un proveedor | III–IV |
 
-> Fuera de alcance: pruebas de hipótesis (Unidad IV). Las comparaciones se hacen solo con intervalos ("el IC de la diferencia no contiene 0").
+> **Alcance: solo procedimientos vistos en clase** («no añadir más de lo que nos han dado»). Lo retirado por no verse en clase está en la sección «Eliminado por no verse en clase» de [02](02-especificacion-estadistica.md). La única prueba de hipótesis es la de diferencia de medias. Detalle en [02](02-especificacion-estadistica.md), [06](06-pruebas-de-hipotesis.md) y [07](07-alineacion-con-la-clase.md).
 
 ## Población, muestra y variables
 
@@ -55,7 +56,9 @@ Desde nuestra red, ¿cuál es el **tiempo medio de respuesta** real de cada API,
 ## Supuestos y limitaciones (para mencionar en la sustentación)
 
 - Las latencias suelen tener **sesgo a la derecha**. El IC de la media sigue siendo válido con *n* grande por el **TLC**.
-- El IC de la **varianza** (χ²) y el de la **razón de varianzas** (F) **suponen normalidad**, así que son sensibles al sesgo. La app muestra una advertencia si el coeficiente de asimetría es alto.
+- Regla del cuaderno para la media: σ desconocida y n < 30 → t de Student; por extensión, con n ≥ 30 (piloto de 30 y principal de 100) se usa **Z con s en lugar de σ**.
+- Si alguna muestra fuera pequeña (n < 30), la diferencia de medias usaría t con varianza agrupada Sp, que **supone σ_A = σ_B** (como en los apuntes).
+- El IC de una proporción solo aplica si n·p̂ ≥ 5 y n·q̂ ≥ 5; con pocas peticiones sobre el SLA (p. ej. 2 de 100) la app indica que no aplica.
 - Los resultados dependen de la red, la hora y la ubicación. No se generalizan a otros usuarios.
 - La independencia entre peticiones es aproximada.
 
@@ -68,7 +71,7 @@ Comparación por defecto (recursos equivalentes y payload similar):
 
 Alternativas disponibles como presets: PokeAPI (`https://pokeapi.co/api/v2/pokemon/ditto`), REST Countries (`https://restcountries.com/v3.1/name/colombia`) y Open‑Meteo para Bogotá (`https://api.open-meteo.com/v1/forecast?latitude=4.71&longitude=-74.07&current=temperature_2m`).
 
-## Estructura sugerida de la presentación (10–12 diapositivas)
+## Estructura sugerida de la presentación (12 diapositivas)
 
 1. Título, integrantes y materia
 2. Caso problema: la startup y el SLA de 300 ms
@@ -77,8 +80,8 @@ Alternativas disponibles como presets: PokeAPI (`https://pokeapi.co/api/v2/pokem
 5. Herramienta digital: demo de LatenciaLab (arquitectura en una imagen)
 6. Unidad I: distribución muestral de la media (histograma de los datos vs. histograma de las medias)
 7. Unidad II: estimación puntual, error estándar y tamaño de muestra desde el piloto
-8. Unidad III: IC por API (media, desviación, proporción que incumple el SLA)
-9. Unidad III: comparación A vs. B (diferencia de medias, razón de varianzas, diferencia de proporciones)
-10. Interpretación y recomendación de proveedor
-11. Limitaciones y conclusiones
-12. Preguntas
+8. Unidad III: IC por API (media en 4 pasos, proporción que incumple el SLA en 6 pasos)
+9. Unidad III: comparación A vs. B (diferencia de medias y diferencia de proporciones; regla del cero)
+10. Unidad IV: prueba de hipótesis para la diferencia de medias (4 pasos, Z.A./R.C., P.C.I./P.C.S., p-valor)
+11. Interpretación y recomendación de proveedor
+12. Limitaciones, conclusiones y preguntas

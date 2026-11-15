@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Alternative } from "@/lib/stats/hypothesis";
 
 // Mensajes de validación de Zod en español.
 z.config(z.locales.es());
@@ -69,3 +70,33 @@ export type PersistedState = z.infer<typeof persistedStateSchema>;
 
 export const CONFIDENCE_LEVELS = [0.9, 0.95, 0.99] as const;
 export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
+
+/** Prueba de hipótesis de la diferencia de medias (docs/06): α de la tabla de clase. */
+export const ALPHA_LEVELS = [0.01, 0.05, 0.1] as const;
+export type AlphaLevel = (typeof ALPHA_LEVELS)[number];
+
+export const alternativeSchema = z.enum(["menor", "mayor", "distinto"]);
+
+export const hypothesisFormSchema = z.object({
+  delta0: z
+    .number({ error: "Ingresa un número (ms)" })
+    .min(-10000, "Mínimo −10000")
+    .max(10000, "Máximo 10000"),
+  alternative: alternativeSchema,
+  alpha: z.union([z.literal(0.01), z.literal(0.05), z.literal(0.1)]),
+});
+export type HypothesisFormValues = z.infer<typeof hypothesisFormSchema>;
+
+export const DEFAULT_HYPOTHESIS: HypothesisFormValues = {
+  delta0: 0,
+  alternative: "distinto",
+  alpha: 0.05,
+};
+
+// `lib/stats` no importa Zod: este chequeo de tipos garantiza que `Alternative` y el esquema coinciden.
+const _alternativeMatches: z.infer<typeof alternativeSchema> extends Alternative
+  ? Alternative extends z.infer<typeof alternativeSchema>
+    ? true
+    : never
+  : never = true;
+void _alternativeMatches;

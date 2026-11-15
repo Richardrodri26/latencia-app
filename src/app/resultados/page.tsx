@@ -11,6 +11,7 @@ import { CiForestChart } from "@/components/results/CiForestChart";
 import { ComparisonPanel } from "@/components/results/ComparisonPanel";
 import { ConfidenceSelector } from "@/components/results/ConfidenceSelector";
 import { DescriptiveTable } from "@/components/results/DescriptiveTable";
+import { HypothesisPanel } from "@/components/results/HypothesisPanel";
 import { Recommendation } from "@/components/results/Recommendation";
 import { useExperiment } from "@/context/ExperimentContext";
 import { useResults } from "@/hooks/useResults";
@@ -98,7 +99,7 @@ export default function ResultadosPage() {
           <Card>
             <CardHeader>
               <CardTitle>Medias con su intervalo de confianza</CardTitle>
-              <CardDescription>Las barras de error muestran el IC t de la media; la línea roja es el SLA.</CardDescription>
+              <CardDescription>{"Las barras de error muestran el IC de la media (Z si n ≥ 30, t si n < 30); la línea roja es el SLA."}</CardDescription>
             </CardHeader>
             <CardContent>
               <CiForestChart a={results.a} b={results.b} slaMs={results.slaMs} />
@@ -113,6 +114,7 @@ export default function ResultadosPage() {
                 </h2>
                 <ComparisonPanel results={results} comparison={results.comparison} />
               </section>
+              <HypothesisPanel results={results} />
               <Recommendation comparison={results.comparison} />
             </>
           ) : (

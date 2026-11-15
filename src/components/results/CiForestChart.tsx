@@ -12,14 +12,14 @@ const config: ChartConfig = {
 
 export function CiForestChart({ a, b, slaMs }: { a: ApiResults; b: ApiResults; slaMs: number }) {
   const rows = [a, b]
-    .filter((r) => r.meanT)
+    .filter((r) => r.mean)
     .map((r) => ({
       api: `${r.id} · ${r.name}`,
       id: r.id,
-      mean: r.meanT!.estimate,
-      error: r.meanT!.margin ?? 0,
-      lower: r.meanT!.lower,
-      upper: r.meanT!.upper,
+      mean: r.mean!.estimate,
+      error: r.mean!.margin,
+      lower: r.mean!.lower,
+      upper: r.mean!.upper,
     }));
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">Datos insuficientes para el gráfico.</p>;
 

@@ -12,7 +12,7 @@
 | **TanStack Query** | Mutación que ejecuta el experimento por lotes con progreso y cancelación |
 | **TanStack Form** | Formulario de configuración (validación con los esquemas Zod vía Standard Schema) |
 | **TanStack Table** | Tabla de mediciones con orden, filtro y paginación |
-| **jstat** | Cuantiles z, t, χ² y F |
+| **jstat** | Cuantiles z y t (valores críticos); CDF de z y t (p-valor) y densidad t (curva de la prueba, docs/06) |
 | **Vitest** | Pruebas de `lib/stats` |
 
 > Para los formularios no usar el componente `Form` de shadcn (está atado a react‑hook‑form). Usar las primitivas `Input`, `Select`, `Label` y `Field` con TanStack Form.
@@ -51,7 +51,10 @@ src/
     experiment/ExperimentForm.tsx, RunProgress.tsx, PresetPicker.tsx
     data/MeasurementsTable.tsx, CsvImportExport.tsx
     results/DescriptiveTable.tsx, Histogram.tsx, CiCard.tsx, CiForestChart.tsx,
-            ComparisonPanel.tsx, Recommendation.tsx, ConfidenceSelector.tsx
+            ComparisonPanel.tsx, Recommendation.tsx, ConfidenceSelector.tsx,
+            NumberLine.tsx, ApiSection.tsx,
+            MathText.tsx (nuevo, docs/07),
+            HypothesisForm.tsx, HypothesisCurve.tsx, HypothesisPanel.tsx (nuevos, docs/06)
     sampling/CltSimulator.tsx, SampleSizeCalculator.tsx
   context/ExperimentContext.tsx
   hooks/useRunExperiment.ts, useResults.ts
@@ -61,10 +64,14 @@ src/
     measure.server.ts          # measureOnce / measureBatch (solo servidor)
     csv.ts                     # Serializar y parsear CSV
     storage.ts                 # localStorage con try/catch
+    results.ts                 # computeResults (cálculo puro que memoiza useResults)
+    ciText.ts                  # Fórmula y pasos con sustitución de cada IC (docs/02, docs/07)
+    hypothesisText.ts          # Pasos y conclusión de la prueba de hipótesis (nuevo, docs/06)
     stats/descriptive.ts, distributions.ts, intervals.ts,
-          sampleSize.ts, sampling.ts, interpret.ts, index.ts
+          sampleSize.ts, sampling.ts, interpret.ts,
+          hypothesis.ts (nuevo, docs/06), index.ts
   types/jstat.d.ts             # Solo si jstat no trae tipos
-tests/stats/*.test.ts
+tests/*.test.ts, tests/stats/*.test.ts
 public/data/respaldo.csv       # Dataset de respaldo listo, recolectado con la app (14-nov-2026)
 ```
 
@@ -118,6 +125,8 @@ export const measureRequestSchema = z.object({
   order: z.enum(['intercalado', 'aleatorio']),
 });
 ```
+
+El esquema del formulario de la prueba de hipótesis (`hypothesisFormSchema`, `ALPHA_LEVELS`, `DEFAULT_HYPOTHESIS`) se agrega en el hito 13; está especificado en [06-pruebas-de-hipotesis.md](06-pruebas-de-hipotesis.md), §4.1.
 
 ## Contrato `POST /api/measure`
 
@@ -183,10 +192,11 @@ export async function measureOnce(url: string, timeoutMs: number) {
 
 **`/resultados`** (fase principal por defecto, con selector de fase)
 - `ConfidenceSelector` (90 / 95 / 99%) que recalcula todo.
-- Por API: `DescriptiveTable`, `Histogram` con una línea vertical en el SLA, y `CiCard` para la media (t y z), la desviación (con varianza), la proporción que incumple el SLA y la tasa de fallos. Cada tarjeta incluye fórmula, sustitución numérica, resultado, interpretación y advertencias.
-- `CiForestChart`: medias de A y B con barras de error del IC (Recharts `ErrorBar`).
-- `ComparisonPanel`: IC de la razón de varianzas → elección Welch/agrupado → IC de la diferencia de medias, e IC de la diferencia de proporciones del SLA, sobre una recta numérica con el 0 (o el 1) marcado.
-- `Recommendation`: conclusión final según `interpret.ts`.
+- Por API: `DescriptiveTable`, `Histogram` con una línea vertical en el SLA, y `CiCard` para la media (un solo IC: Z con s si n ≥ 30, t si n < 30; 4 pasos de clase), la proporción que incumple el SLA y la tasa de fallos (6 pasos; «no aplica» si no se cumple n·p̂ ≥ 5 y n·q̂ ≥ 5). Cada tarjeta incluye fórmula, pasos con sustitución numérica, resultado en la forma (θ̂ᵢ ≤ θ ≤ θ̂ₛ) = (1 − α)100 %, interpretación y avisos. Las expresiones con subíndice (`Z_{α/2}`, `t_{α/2}`) se muestran con `MathText`.
+- `CiForestChart`: medias de A y B con barras de error del IC de la media (Recharts `ErrorBar`).
+- `ComparisonPanel`: IC de la diferencia de medias (Z si n_A, n_B ≥ 30; t con Sp si hay muestras pequeñas) e IC de la diferencia de proporciones del SLA, cada uno sobre una recta numérica con el 0 marcado («si el IC contiene al cero, no hay diferencias»).
+- Prueba de hipótesis para la diferencia de medias (docs/06): `HypothesisPanel` con `HypothesisForm` (TanStack Form + `hypothesisFormSchema`: δ₀, tipo de H₁, α ∈ {1 %, 5 %, 10 %}), `HypothesisCurve` (Z.A., R.C., P.C.I./P.C.S. y la variante) y los 4 pasos de clase.
+- `Recommendation`: conclusión final según `recommend` de `interpret.ts` (diferencia de medias → diferencia de proporciones del SLA → sin evidencia).
 
 **`/muestreo`**
 - `SampleSizeCalculator`: para media y para proporción, precargado con `s` y `p̂` del piloto. Muestra fórmula y sustitución. Botón **"Usar este n"** que lleva a `/experimento` con el valor precargado.
@@ -203,5 +213,6 @@ id,runId,phase,target,seq,startedAt,latencyMs,status,ok,bytes,error,warmup
 ## UI y calidad
 
 - Interfaz en español. Diseño limpio con modo claro/oscuro (variables de shadcn). Colores consistentes: API A = `chart-1` y API B = `chart-2` en toda la app.
-- Mostrar siempre la fórmula junto a cada resultado, porque el profesor evalúa los conceptos.
+- Mostrar siempre la fórmula y los pasos de clase junto a cada resultado, porque el profesor evalúa los conceptos.
+- Solo procedimientos, notación y redacción de los apuntes de clase (ver docs/02 y docs/07).
 - `npm run lint`, `npm run typecheck` (`tsc --noEmit`) y `npm test` deben pasar.

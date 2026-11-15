@@ -3,7 +3,9 @@
 import type { ReactNode } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MathText } from "@/components/results/MathText";
 import type { Explanation } from "@/lib/ciText";
+import { minus } from "@/lib/format";
 import type { ConfidenceInterval } from "@/lib/stats";
 
 type Props = {
@@ -13,12 +15,29 @@ type Props = {
   interpretation?: string;
   unit?: string;
   digits?: number;
+  /** Parámetro que se muestra en el resultado: (θ̂ᵢ ≤ θ ≤ θ̂ₛ). Por defecto θ. */
+  parameter?: string;
+  /** Si es true no se presenta el intervalo como resultado ni su interpretación. */
+  notApplicable?: boolean;
   badge?: ReactNode;
   children?: ReactNode;
 };
 
-export function CiCard({ title, ci, explanation, interpretation, unit = "", digits = 2, badge, children }: Props) {
-  const show = (x: number) => `${x.toFixed(digits)}${unit ? ` ${unit}` : ""}`;
+const labelClass = "text-xs font-semibold uppercase text-muted-foreground";
+
+export function CiCard({
+  title,
+  ci,
+  explanation,
+  interpretation,
+  unit = "",
+  digits = 2,
+  parameter = "θ",
+  notApplicable = false,
+  badge,
+  children,
+}: Props) {
+  const show = (x: number) => `${minus(x.toFixed(digits))}${unit ? ` ${unit}` : ""}`;
   return (
     <Card size="sm">
       <CardHeader>
@@ -32,39 +51,59 @@ export function CiCard({ title, ci, explanation, interpretation, unit = "", digi
           <p className="text-muted-foreground">Datos insuficientes para calcular este intervalo.</p>
         ) : (
           <>
-            <dl className="space-y-1">
-              <div>
-                <dt className="text-xs font-semibold uppercase text-muted-foreground">Fórmula</dt>
-                <dd className="font-mono text-xs break-words">{explanation.formula}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase text-muted-foreground">Sustitución</dt>
-                <dd className="font-mono text-xs break-words">{explanation.substitution}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                  Resultado ({Math.round(ci.confidence * 100)}%)
-                </dt>
-                <dd className="text-base font-semibold tabular-nums">
-                  [{show(ci.lower)} ; {show(ci.upper)}]
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">estimación: {show(ci.estimate)}</span>
-                </dd>
-              </div>
-            </dl>
-            {interpretation && (
-              <p>
-                <span className="font-semibold">Interpretación: </span>
-                {interpretation}
+            <div>
+              <p className={labelClass}>Fórmula</p>
+              <p className="font-mono text-xs break-words">
+                <MathText text={explanation.formula} />
               </p>
+            </div>
+
+            <ol className="space-y-2">
+              {explanation.steps.map((s) => (
+                <li key={s.title}>
+                  <p className="font-semibold">
+                    <MathText text={s.title} />
+                  </p>
+                  <p className="font-mono text-xs whitespace-pre-line break-words">
+                    <MathText text={s.text} />
+                  </p>
+                </li>
+              ))}
+              {!notApplicable && interpretation && (
+                <li>
+                  <p className="font-semibold">Paso {explanation.steps.length + 1} · Interpretación</p>
+                  <p>{interpretation}</p>
+                </li>
+              )}
+            </ol>
+
+            {!notApplicable && (
+              <div>
+                <p className={labelClass}>Resultado</p>
+                <p className="text-base font-semibold tabular-nums">
+                  ({show(ci.lower)} ≤ {parameter} ≤ {show(ci.upper)}) = {Math.round(ci.confidence * 100)} %
+                </p>
+                <p className="text-xs text-muted-foreground">Estimación puntual: {show(ci.estimate)}</p>
+              </div>
             )}
+
             {ci.warnings.map((w) => (
               <Alert key={w}>
                 <AlertDescription>
-                  <span className="font-semibold">Advertencia: </span>
+                  <span className="font-semibold">Aviso: </span>
                   {w}
                 </AlertDescription>
               </Alert>
             ))}
+
+            {notApplicable && (
+              <details className="rounded-md border p-2">
+                <summary className="cursor-pointer font-medium">Cálculo de referencia (no aplica)</summary>
+                <p className="mt-2 font-mono text-xs tabular-nums">
+                  [{show(ci.lower)} ; {show(ci.upper)}]
+                </p>
+              </details>
+            )}
             {children}
           </>
         )}

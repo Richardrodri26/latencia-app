@@ -10,7 +10,7 @@ export function Recommendation({ comparison }: { comparison: Comparison }) {
       <CardHeader>
         <CardTitle>Recomendación</CardTitle>
         <CardDescription>
-          Criterio: mejor media (IC de la diferencia sin 0); si hay empate, menor incumplimiento del SLA y luego menor varianza.
+          Criterio: diferencia de medias (si su IC no contiene al cero, gana la más rápida); si lo contiene, diferencia de proporciones que incumplen el SLA; si ambos contienen al cero, no hay evidencia suficiente.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -11,6 +11,12 @@ export type Descriptive = {
   skewness: number;
   /** Coeficiente de variación s / media. */
   cv: number;
+  /** Σx */
+  sum: number;
+  /** Σx² */
+  sumSq: number;
+  /** Suma de cuadrados SS = Σx² − (Σx)²/n (NaN si n = 0). */
+  ss: number;
 };
 
 /** Percentil con interpolación lineal (p entre 0 y 1) sobre datos ya ordenados. */
@@ -58,6 +64,8 @@ export function describe(data: number[]): Descriptive {
   const m = mean(data);
   const variance = sampleVariance(data);
   const sd = Math.sqrt(variance);
+  const sum = data.reduce((acc, x) => acc + x, 0);
+  const sumSq = data.reduce((acc, x) => acc + x * x, 0);
   return {
     n,
     mean: m,
@@ -69,5 +77,8 @@ export function describe(data: number[]): Descriptive {
     p95: percentileSorted(sorted, 0.95),
     skewness: skewness(data),
     cv: sd / m,
+    sum,
+    sumSq,
+    ss: n ? sumSq - (sum * sum) / n : NaN,
   };
 }

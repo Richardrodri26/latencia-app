@@ -5,19 +5,24 @@ export function zQ(p: number): number {
   return jstat.normal.inv(p, 0, 1);
 }
 
-/** Cuantil de la t de Student (admite gl no entero). */
+/** Cuantil de la t de Student. */
 export function tQ(p: number, gl: number): number {
   return jstat.studentt.inv(p, gl);
 }
 
-/** Cuantil de la chi-cuadrado. */
-export function chiQ(p: number, gl: number): number {
-  return jstat.chisquare.inv(p, gl);
+/** CDF de la normal estándar: P(Z ≤ x). */
+export function zCdf(x: number): number {
+  return jstat.normal.cdf(x, 0, 1);
 }
 
-/** Cuantil de la F de Fisher. */
-export function fQ(p: number, gl1: number, gl2: number): number {
-  return jstat.centralF.inv(p, gl1, gl2);
+/** CDF de la t de Student: P(T ≤ x) con gl grados de libertad. */
+export function tCdf(x: number, gl: number): number {
+  return jstat.studentt.cdf(x, gl);
+}
+
+/** Densidad de la t de Student (solo para dibujar la curva). */
+export function tPdf(x: number, gl: number): number {
+  return jstat.studentt.pdf(x, gl);
 }
 
 /** Densidad de la normal N(mu, sigma). */

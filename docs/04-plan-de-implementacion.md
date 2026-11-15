@@ -2,6 +2,8 @@
 
 Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios de aceptación del actual.
 
+> **Estado (15-nov-2026):** los hitos 0–7 están implementados. Los hitos **8–11** alinean la app con lo visto en clase ([07-alineacion-con-la-clase.md](07-alineacion-con-la-clase.md)) y los hitos **12–14** agregan la prueba de hipótesis para la diferencia de medias ([06-pruebas-de-hipotesis.md](06-pruebas-de-hipotesis.md)). Primero 07, luego 06. Donde los hitos 1 y 5 mencionan valores o advertencias que ya no existen, mandan docs/02 y docs/07.
+
 ## Calendario (sustentación: jueves 19 de noviembre de 2026)
 
 | Día | Trabajo |
@@ -10,6 +12,8 @@ Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios d
 | Lun 9 | Hitos 4–5: datos y resultados |
 | Mar 10 | Hito 6 (muestreo) y **recolección real**: piloto y experimento principal desde el equipo y la red de los integrantes. Guardar `respaldo.csv` (hecho el 14-nov; ver decisión 29) |
 | Mié 11 – Vie 13 | Hito 7: pulido. Presentación con las capturas y números reales. Ensayo |
+| Dom 15 – Lun 16 | Hitos 8–11: alineación con la clase (docs/07) |
+| Mar 17 – Mié 18 | Hitos 12–14: prueba de hipótesis (docs/06). Ensayo con la presentación rehecha |
 | Jue 19 | Sustentación (llevar el CSV de respaldo) |
 
 ## Hito 0 · Base del proyecto
@@ -43,7 +47,7 @@ Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios d
 ## Hito 5 · Resultados
 - Página `/resultados` completa: descriptivos, histogramas, tarjetas de IC con fórmula, sustitución e interpretación, gráfico de IC, panel de comparación y recomendación.
 
-**Aceptación:** al cargar un CSV construido con los datos de prueba A y B, los números coinciden con la especificación. Cambiar la confianza a 90% o 99% recalcula al instante. Se muestran las advertencias de normalidad y de `n·p̂ < 5` cuando aplican.
+**Aceptación:** al cargar un CSV construido con los datos de prueba A y B, los números coinciden con la especificación. Cambiar la confianza a 90% o 99% recalcula al instante. Se muestra el aviso de `n·p̂ < 5` o `n·q̂ < 5` cuando aplica.
 
 ## Hito 6 · Muestreo
 - Página `/muestreo` con `SampleSizeCalculator` (precargado desde el piloto, con el botón "Usar este n") y `CltSimulator`.
@@ -57,8 +61,30 @@ Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios d
 
 **Aceptación:** flujo completo Piloto → Tamaño de muestra → Experimento → Resultados sin errores en consola; `npm run build` exitoso.
 
+## Hitos 8–11 · Alineación con la clase
+
+Detalle, rutas y definición de terminado de cada uno en [07-alineacion-con-la-clase.md](07-alineacion-con-la-clase.md), sección 5.
+
+- **Hito 8 · Estadística pura:** quitar lo listado en «Eliminado por no verse en clase» de docs/02; `meanCI`, `diffMeansCI`, `summaryFromSums`, reglas de distribución; recomendación nueva; pruebas con los ejemplos del cuaderno.
+- **Hito 9 · Resultados y textos:** `results.ts` y `ciText.ts` con los pasos de clase; prueba de integración con el respaldo.
+- **Hito 10 · UI:** `MathText`, `CiCard` con pasos, `ApiSection`, `ComparisonPanel`, `Recommendation`, inicio.
+- **Hito 11 · Cierre:** README y revisión en navegador.
+
+**Aceptación:** la definida en docs/07; ningún texto ni prueba usa lo listado en «Eliminado por no verse en clase» de docs/02; `lint`, `typecheck`, `test` y `build` pasan.
+
+## Hitos 12–14 · Prueba de hipótesis (Unidad IV)
+
+Detalle en [06-pruebas-de-hipotesis.md](06-pruebas-de-hipotesis.md), sección 8.
+
+- **Hito 12 · Funciones:** `zCdf`, `tCdf`, `tPdf`, `hypothesis.ts` y sus pruebas.
+- **Hito 13 · Textos:** `hypothesisText.ts` y `hypothesisFormSchema`.
+- **Hito 14 · UI:** `HypothesisForm`, `HypothesisCurve`, `HypothesisPanel` en `/resultados`; fila IV en el inicio.
+
+**Aceptación:** criterios de la sección 7 de docs/06.
+
 ## Definición de terminado (todo el proyecto)
 - Lint, typecheck, pruebas y build sin errores.
 - Ningún `any` sin justificar.
 - Todos los textos de la interfaz en español.
-- Cada intervalo muestra su fórmula, su sustitución numérica y su interpretación.
+- Cada intervalo muestra su fórmula, sus pasos de clase con sustitución numérica y su interpretación.
+- Solo procedimientos de clase (docs/02, docs/06, docs/07).

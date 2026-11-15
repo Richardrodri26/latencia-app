@@ -3,25 +3,23 @@
 import { CiCard } from "@/components/results/CiCard";
 import { Histogram } from "@/components/results/Histogram";
 import type { ApiResults } from "@/hooks/useResults";
-import {
-  explainMeanT,
-  explainMeanZ,
-  explainProportion,
-  explainSd,
-  explainVariance,
-} from "@/lib/ciText";
+import { explainMean, explainProportion } from "@/lib/ciText";
 import {
   interpretFailures,
   interpretMean,
-  interpretSd,
+  interpretMeanVsSla,
   interpretSla,
-  interpretVariance,
+  meanDistribution,
 } from "@/lib/stats";
 
 export function ApiSection({ api, slaMs }: { api: ApiResults; slaMs: number }) {
   const d = api.descriptive;
   const color = api.id === "A" ? "chart-1" : "chart-2";
   const dot = api.id === "A" ? "bg-chart-1" : "bg-chart-2";
+  const meanDist = meanDistribution(d.n, false) === "z" ? "Z con s, n ≥ 30" : "t de Student, n < 30";
+  const mean = api.mean;
+  const sla = api.sla.ci;
+  const failures = api.failures.ci;
   return (
     <section className="space-y-4" aria-labelledby={`api-${api.id}`}>
       <h2 id={`api-${api.id}`} className="flex items-center gap-2 text-xl font-semibold">
@@ -32,45 +30,31 @@ export function ApiSection({ api, slaMs }: { api: ApiResults; slaMs: number }) {
       <Histogram data={api.latencies} slaMs={slaMs} color={color} title={`API ${api.id} · ${api.name}`} />
 
       <CiCard
-        title="Media μ (t de Student, σ desconocida)"
-        ci={api.meanT}
-        explanation={api.meanT ? explainMeanT(api.meanT, d) : undefined}
-        interpretation={api.meanT ? interpretMean(api.meanT, api.name) : undefined}
+        title={`IC para la media μ (${meanDist})`}
+        ci={mean}
+        explanation={mean ? explainMean(mean, d) : undefined}
+        interpretation={
+          mean ? `${interpretMean(mean, api.name)} ${interpretMeanVsSla(mean, api.name, slaMs)}` : undefined
+        }
+        parameter="μ"
         unit="ms"
       />
       <CiCard
-        title="Media μ (aproximación normal z)"
-        ci={api.meanZ}
-        explanation={api.meanZ ? explainMeanZ(api.meanZ, d) : undefined}
-        interpretation={api.meanZ ? "Para n grande este intervalo coincide prácticamente con el de la t." : undefined}
-        unit="ms"
-      />
-      <CiCard
-        title="Desviación estándar σ (χ²)"
-        ci={api.sd}
-        explanation={api.sd ? explainSd(api.sd, d) : undefined}
-        interpretation={api.sd ? interpretSd(api.sd, api.name) : undefined}
-        unit="ms"
-      />
-      <CiCard
-        title="Varianza σ² (χ²)"
-        ci={api.variance}
-        explanation={api.variance ? explainVariance(api.variance, d) : undefined}
-        interpretation={api.variance ? interpretVariance(api.variance, api.name) : undefined}
-        unit="ms²"
-      />
-      <CiCard
-        title={`Proporción que incumple el SLA (> ${slaMs} ms)`}
-        ci={api.sla.ci}
-        explanation={api.sla.ci ? explainProportion(api.sla.ci, api.sla.x, api.sla.n) : undefined}
-        interpretation={api.sla.ci ? interpretSla(api.sla.ci, api.name, slaMs) : undefined}
+        title={`IC para la proporción que incumple el SLA (> ${slaMs} ms)`}
+        ci={sla}
+        explanation={sla ? explainProportion(sla, api.sla.x, api.sla.n) : undefined}
+        interpretation={sla ? interpretSla(sla, api.name, slaMs) : undefined}
+        notApplicable={sla?.conditionMet === false}
+        parameter="p"
         digits={4}
       />
       <CiCard
-        title="Tasa de fallos"
-        ci={api.failures.ci}
-        explanation={api.failures.ci ? explainProportion(api.failures.ci, api.failures.x, api.failures.n) : undefined}
-        interpretation={api.failures.ci ? interpretFailures(api.failures.ci, api.name) : undefined}
+        title="IC para la tasa de fallos"
+        ci={failures}
+        explanation={failures ? explainProportion(failures, api.failures.x, api.failures.n) : undefined}
+        interpretation={failures ? interpretFailures(failures, api.name) : undefined}
+        notApplicable={failures?.conditionMet === false}
+        parameter="p"
         digits={4}
       />
     </section>

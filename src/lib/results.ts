@@ -1,17 +1,13 @@
 import type { ConfidenceLevel, Measurement, Phase, TargetId } from "@/lib/schemas";
 import {
-  compareMeans,
   describe,
+  diffMeansCI,
   diffProportionsCI,
-  meanT,
-  meanZ,
+  meanCI,
   proportionCI,
   recommend,
-  sdCI,
-  varianceCI,
   type ConfidenceInterval,
   type Descriptive,
-  type MeansComparison,
   type RecommendationResult,
 } from "@/lib/stats";
 
@@ -23,12 +19,10 @@ export type ApiResults = {
   /** Latencias válidas (ok = true, warmup = false). */
   latencies: number[];
   descriptive: Descriptive;
-  /** Los IC de media/varianza requieren al menos 2 datos. */
+  /** El IC de la media requiere al menos 2 datos. */
   enough: boolean;
-  meanT: ConfidenceInterval | null;
-  meanZ: ConfidenceInterval | null;
-  variance: ConfidenceInterval | null;
-  sd: ConfidenceInterval | null;
+  /** IC de la media: Z con s si n ≥ 30, t si n < 30 (σ siempre desconocida en la app). */
+  mean: ConfidenceInterval | null;
   /** Proporción de peticiones válidas con latencia > SLA. */
   sla: Counted;
   /** Proporción de fallos sobre todas las mediciones sin calentamiento. */
@@ -36,7 +30,7 @@ export type ApiResults = {
 };
 
 export type Comparison = {
-  means: MeansComparison;
+  diffMeans: ConfidenceInterval;
   diffSla: ConfidenceInterval;
   recommendation: RecommendationResult;
 };
@@ -72,10 +66,7 @@ function buildApi(
     latencies,
     descriptive: d,
     enough,
-    meanT: enough ? meanT(d, confidence) : null,
-    meanZ: enough ? meanZ(d, confidence) : null,
-    variance: enough ? varianceCI(d, confidence) : null,
-    sd: enough ? sdCI(d, confidence) : null,
+    mean: enough ? meanCI(d, confidence) : null,
     sla: countedProportion(latencies.filter((x) => x > slaMs).length, latencies.length, confidence),
     failures: countedProportion(own.filter((m) => !m.ok).length, own.length, confidence),
   };
@@ -96,18 +87,12 @@ export function computeResults(
 
   let comparison: Comparison | null = null;
   if (a.enough && b.enough && a.sla.n > 0 && b.sla.n > 0) {
-    const means = compareMeans(a.descriptive, b.descriptive, confidence);
-    const diffCi = diffProportionsCI(a.sla.x, a.sla.n, b.sla.x, b.sla.n, confidence);
+    const diffMeans = diffMeansCI(a.descriptive, b.descriptive, confidence);
+    const diffSla = diffProportionsCI(a.sla.x, a.sla.n, b.sla.x, b.sla.n, confidence);
     comparison = {
-      means,
-      diffSla: diffCi,
-      recommendation: recommend({
-        nameA,
-        nameB,
-        diffMeans: means.chosen,
-        diffSla: diffCi,
-        varianceRatio: means.ratio,
-      }),
+      diffMeans,
+      diffSla,
+      recommendation: recommend({ nameA, nameB, diffMeans, diffSla }),
     };
   }
   return { phase, confidence, slaMs, total: rows.length, a, b, comparison };

@@ -84,28 +84,23 @@ describe("computeResults (pipeline de useResults) con los datos de prueba de la 
     expect(r.a.descriptive.sd).toBeCloseTo(3.162278, TOL);
   });
 
-  it("IC de la media (t), varianza y desviación de A", () => {
-    expect(r.a.meanT?.lower).toBeCloseTo(10.073514, TOL);
-    expect(r.a.meanT?.upper).toBeCloseTo(17.926486, TOL);
-    expect(r.a.variance?.lower).toBeCloseTo(3.589605, TOL);
-    expect(r.a.variance?.upper).toBeCloseTo(82.57322, TOL);
-    expect(r.a.sd?.lower).toBeCloseTo(1.894625, TOL);
-    expect(r.a.sd?.upper).toBeCloseTo(9.086981, TOL);
+  it("IC de la media de A (n = 5 < 30 → t)", () => {
+    expect(r.a.mean?.kind).toBe("mean-t");
+    expect(r.a.mean?.df).toBe(4);
+    expect(r.a.mean?.lower).toBeCloseTo(10.073514, TOL);
+    expect(r.a.mean?.upper).toBeCloseTo(17.926486, TOL);
+    expect(r.a.descriptive.sum).toBeCloseTo(70, TOL);
+    expect(r.a.descriptive.ss).toBeCloseTo(40, TOL);
   });
 
-  it("razón de varianzas y diferencia de medias (agrupado y Welch, gl = 8)", () => {
+  it("diferencia de medias (t con Sp, gl = 8)", () => {
     const c = r.comparison;
     expect(c).not.toBeNull();
     if (!c) return;
-    expect(c.means.ratio.lower).toBeCloseTo(0.104118, TOL);
-    expect(c.means.ratio.upper).toBeCloseTo(9.60453, TOL);
-    expect(c.means.equalVariances).toBe(true);
-    expect(c.means.chosen.kind).toBe("diff-means-pooled");
-    for (const ci of [c.means.pooled, c.means.welch, c.means.chosen]) {
-      expect(ci.lower).toBeCloseTo(-14.612008, TOL);
-      expect(ci.upper).toBeCloseTo(-5.387992, TOL);
-    }
-    expect(c.means.welch.df).toBeCloseTo(8, TOL);
+    expect(c.diffMeans.kind).toBe("diff-means-pooled");
+    expect(c.diffMeans.df).toBe(8);
+    expect(c.diffMeans.lower).toBeCloseTo(-14.612008, TOL);
+    expect(c.diffMeans.upper).toBeCloseTo(-5.387992, TOL);
   });
 
   it("recomienda A (IC de la diferencia de medias solo negativo)", () => {
@@ -116,7 +111,7 @@ describe("computeResults (pipeline de useResults) con los datos de prueba de la 
   it("recalcula con otra confianza sin cambiar los datos", () => {
     const r99 = computeResults(dataset(), "principal", 0.99, 15, "API A", "API B");
     expect(r99.a.latencies).toEqual(A);
-    expect(r99.a.meanT!.upper - r99.a.meanT!.lower).toBeGreaterThan(r.a.meanT!.upper - r.a.meanT!.lower);
+    expect(r99.a.mean!.upper - r99.a.mean!.lower).toBeGreaterThan(r.a.mean!.upper - r.a.mean!.lower);
   });
 
   it("sin latencias válidas no hay IC ni comparación", () => {
@@ -124,7 +119,7 @@ describe("computeResults (pipeline de useResults) con los datos de prueba de la 
     const e = computeResults(onlyBad, "principal", 0.95, 15, "A", "B");
     expect(e.a.latencies).toEqual([]);
     expect(e.a.enough).toBe(false);
-    expect(e.a.meanT).toBeNull();
+    expect(e.a.mean).toBeNull();
     expect(e.a.sla.ci).toBeNull();
     expect(e.a.failures).toMatchObject({ x: 1, n: 1 });
     expect(e.comparison).toBeNull();

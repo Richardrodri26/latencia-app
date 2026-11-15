@@ -4,3 +4,4 @@ export * from "./intervals";
 export * from "./sampleSize";
 export * from "./sampling";
 export * from "./interpret";
+export * from "./hypothesis";
