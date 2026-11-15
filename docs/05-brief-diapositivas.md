@@ -40,9 +40,9 @@ Vas a crear (o revisar) las diapositivas de la sustentación del proyecto univer
 
 | Comando | Qué hace |
 |---------|----------|
-| `npm install` | Instala dependencias |
-| `npm run dev` | Servidor de desarrollo en **http://localhost:3000** |
-| `npm run build` y `npm start` | Producción local (alternativa estable para la demo) |
+| `pnpm install` | Instala dependencias |
+| `pnpm dev` | Servidor de desarrollo en **http://localhost:3000** |
+| `pnpm build` y `pnpm start` | Producción local (alternativa estable para la demo) |
 
 | Ruta | Contenido |
 |------|-----------|
@@ -198,7 +198,7 @@ Ejemplos del cuaderno recalculados con SciPy (docs/02 y tests): días sin accide
 ## 6. Guía de demo en vivo (paso a paso)
 
 **Preparación (antes de entrar al salón):**
-1. `npm install` (una vez) y `npm run dev` (o `npm run build && npm start`); abrir `http://localhost:3000`. Ejecutar **en local**.
+1. `pnpm install` (una vez) y `pnpm dev` (o `pnpm build && ppnpm start`); abrir `http://localhost:3000`. Ejecutar **en local**.
 2. **Pulsar «Borrar datos» antes de empezar** (en `/experimento` o `/datos`) si hay datos de prueba en el navegador (`localStorage`, clave `latencialab:v1`). **Advertencia:** «Borrar datos» limpia **todas** las fases; no lo uses en medio de la demo o perderás piloto y principal.
 3. Verificar internet y el tema claro/oscuro que se vea mejor en el proyector.
 

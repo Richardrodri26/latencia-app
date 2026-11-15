@@ -32,7 +32,7 @@ Navegador (React)                                 Servidor Next.js (Node)
 
 - **La medición se hace en el servidor (Route Handler)**. Así se evita CORS y las mediciones son homogéneas.
 - **El análisis se hace en el cliente**: `lib/stats` son funciones puras que se recalculan con `useMemo` al cambiar el nivel de confianza.
-- **Para la sustentación se ejecuta en local** (`npm run dev` o `npm run build && npm start`). En Vercel la medición saldría desde el datacenter de Vercel, no desde el equipo y la red de los integrantes.
+- **Para la sustentación se ejecuta en local** (`pnpm dev` o `pnpm build && ppnpm start`). En Vercel la medición saldría desde el datacenter de Vercel, no desde el equipo y la red de los integrantes.
 
 ## Estructura de carpetas
 
@@ -215,4 +215,4 @@ id,runId,phase,target,seq,startedAt,latencyMs,status,ok,bytes,error,warmup
 - Interfaz en español. Diseño limpio con modo claro/oscuro (variables de shadcn). Colores consistentes: API A = `chart-1` y API B = `chart-2` en toda la app.
 - Mostrar siempre la fórmula y los pasos de clase junto a cada resultado, porque el profesor evalúa los conceptos.
 - Solo procedimientos, notación y redacción de los apuntes de clase (ver docs/02 y docs/07).
-- `npm run lint`, `npm run typecheck` (`tsc --noEmit`) y `npm test` deben pasar.
+- `pnpm lint`, `pnpm typecheck` (`tsc --noEmit`) y `pnpm test` deben pasar.

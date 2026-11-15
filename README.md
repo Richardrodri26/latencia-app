@@ -39,7 +39,7 @@ Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zod · TanSta
 
 Implementados los hitos 0 a 14. Los hitos 0–7 construyeron la app (estadística pura, medición en el servidor en `/api/measure`, experimento con progreso y cancelación, datos con CSV/JSON, resultados, muestreo y pulido). Los hitos 8–11 la alinearon con los procedimientos de clase ([docs/07](docs/07-alineacion-con-la-clase.md)): se quitaron los intervalos de varianza, desviación, razón de varianzas, Welch y la advertencia de asimetría; el IC de la media es uno solo (Z con s si n ≥ 30, t si n < 30; Z con σ si fuera conocida) y se muestra con los pasos de clase (4 para la media, 6 para la proporción, con «no aplica» si no se cumple n·p̂ ≥ 5 y n·q̂ ≥ 5); la diferencia de medias usa Z (n_A, n_B ≥ 30) o t con Sp (muestras pequeñas); y la recomendación sigue la regla media → SLA → sin evidencia. Los hitos 12–14 agregaron la **prueba de hipótesis para la diferencia de medias** (Unidad IV, [docs/06](docs/06-pruebas-de-hipotesis.md)) en `/resultados`: H₀ y H₁ (<, >, ≠), α de 1, 5 o 10 %, δ₀ editable, variante Z o t con Sp, puntos críticos P.C.I./P.C.S., zona de aceptación / región crítica con su curva, p-valor y conclusión con «se acepta H₀» / «se rechaza H₀», en los 4 pasos de clase. La lógica está en `src/lib/stats/hypothesis.ts` (con `zCdf`, `tCdf`) y los textos en `src/lib/hypothesisText.ts`. `lint`, `typecheck`, `test` (200 pruebas, incluidas las de los ejemplos del cuaderno, el dataset de respaldo, los textos de los pasos, la prueba de hipótesis y el render de `/resultados`) y `build` pasan. Las decisiones sobre puntos ambiguos están en [docs/decisiones.md](docs/decisiones.md).
 
-**Pendiente:** la verificación visual en navegador de `/`, `/resultados` (incluida la curva de la prueba de hipótesis) y `/muestreo` (consola sin errores): los criterios de la UI se comprobaron con pruebas de render en el servidor y con `npm run build`, no en un navegador. La presentación ya se rehízo con los procedimientos de clase.
+**Pendiente:** la verificación visual en navegador de `/`, `/resultados` (incluida la curva de la prueba de hipótesis) y `/muestreo` (consola sin errores): los criterios de la UI se comprobaron con pruebas de render en el servidor y con `pnpm build`, no en un navegador. La presentación ya se rehízo con los procedimientos de clase.
 
 Las latencias se miden desde el equipo y la red de los integrantes, donde se ejecuta la aplicación. `public/data/respaldo.csv` es el dataset de respaldo listo: se recolectó con la propia app el 14 de noviembre de 2026 (piloto de 30 y principal de 100 peticiones por API, más 3 de calentamiento por API y fase). El CSV no guarda la red usada (el campo "Red usada" del formulario es opcional y no forma parte del formato CSV). Ver [decisión 29](docs/decisiones.md).
 
@@ -48,19 +48,19 @@ Las latencias se miden desde el equipo y la red de los integrantes, donde se eje
 ## Puesta en marcha
 
 ```bash
-npm install
-npm run dev        # http://localhost:3000
+pnpm install
+pnpm dev        # http://localhost:3000
 ```
 
 Scripts:
 
 | Script | Qué hace |
 |--------|----------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` / `npm start` | Build de producción y ejecución |
-| `npm run lint` | ESLint (`eslint .`, Next 16 ya no trae `next lint`) |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Vitest (`tests/`, incluye `.test.tsx`) |
+| `pnpm dev` | Servidor de desarrollo |
+| `pnpm build` / `pnpm start` | Build de producción y ejecución |
+| `pnpm lint` | ESLint (`eslint .`, Next 16 ya no trae `next lint`) |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm test` | Vitest (`tests/`, incluye `.test.tsx`) |
 
 Variables de entorno (`.env.local`, opcional):
 

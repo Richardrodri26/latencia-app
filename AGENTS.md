@@ -17,7 +17,7 @@ Leer en este orden:
 
 ## Reglas
 
-- Seguir los hitos **en orden**. Al terminar cada uno, verificar sus criterios de aceptación y ejecutar `npm run lint && npm run typecheck && npm test`.
+- Seguir los hitos **en orden**. Al terminar cada uno, verificar sus criterios de aceptación y ejecutar `pnpm lint && pnpm typecheck && pnpm test`.
 - **Solo procedimientos de clase.** «No añadir más de lo que nos han dado»: usar únicamente los procedimientos, la notación y la redacción de los apuntes (docs/02 y docs/06). No agregar nada de la lista «Eliminado por no verse en clase» de docs/02, ni otras pruebas de hipótesis, ni métodos alternativos para proporciones (la clase dice «se acepta H₀»). Si algo no está en los apuntes, no va.
 - **La exactitud estadística es lo prioritario.** Implementar `src/lib/stats` como funciones puras con pruebas, usando los valores de prueba de la especificación (ejemplos del cuaderno calculados con SciPy). No inventar fórmulas ni cambiar las de la especificación.
 - Usar **cuantiles** `zQ`, `tQ` para los valores críticos y `zCdf`, `tCdf` para el p-valor, tal como están definidos. Regla de distribución: σ conocida → Z; σ desconocida y n < 30 → t; σ desconocida y n ≥ 30 → Z con s.
@@ -33,7 +33,7 @@ Leer en este orden:
 
 ## Definición de terminado
 
-`npm run lint`, `npm run typecheck`, `npm test` y `npm run build` pasan. El flujo Piloto → Tamaño de muestra → Experimento → Resultados funciona sin errores en consola, y el README refleja el estado real del proyecto.
+`pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` pasan. El flujo Piloto → Tamaño de muestra → Experimento → Resultados funciona sin errores en consola, y el README refleja el estado real del proyecto.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

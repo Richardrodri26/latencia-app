@@ -355,7 +355,7 @@ Propiedad a probar (coherencia IC–prueba en la rama Z): para la prueba bilater
 5. Un δ₀ vacío o no numérico muestra «Ingresa un número (ms)» y no rompe la página.
 6. Ningún texto de la UI menciona errores tipo I/II, potencia ni «no se rechaza H₀».
 7. Fase piloto (n = 30 → Z) funciona igual. Un CSV con n < 30 por API muestra la variante t con Sp, gl y la frase del supuesto σ_A = σ_B.
-8. `npm run lint && npm run typecheck && npm test && npm run build` pasan.
+8. `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pasan.
 
 ## 8. Hitos (después de los hitos 8–11 de docs/07)
 
@@ -363,4 +363,4 @@ Propiedad a probar (coherencia IC–prueba en la rama Z): para la prueba bilater
 |------|---------|------------------|
 | **12 · Funciones** | `zCdf`, `tCdf`, `tPdf` en `distributions.ts`; `cdf`/`pdf` en `jstat.d.ts`; `hypothesis.ts` y su export en `index.ts`; helper compartido de error estándar en `intervals.ts`; `tests/stats/hypothesis.test.ts`; R1–R4 en `tests/respaldo.test.ts` | Pruebas 5.1–5.5 en verde; `lint`, `typecheck`, `test` pasan |
 | **13 · Textos** | `src/lib/hypothesisText.ts`, `tests/hypothesisText.test.ts`; esquema `hypothesisFormSchema` y `DEFAULT_HYPOTHESIS` en `schemas.ts` con su prueba | Textos de R1 y R3 exactos; `lint`, `typecheck`, `test` pasan |
-| **14 · UI** | `HypothesisForm.tsx`, `HypothesisCurve.tsx`, `HypothesisPanel.tsx`; sección en `/resultados`; fila IV en `src/app/page.tsx`; README (tabla de temas, estado) y `docs/decisiones.md` si surge algo ambiguo | Criterios de aceptación 1–8; `npm run build` pasa; sin errores en consola |
+| **14 · UI** | `HypothesisForm.tsx`, `HypothesisCurve.tsx`, `HypothesisPanel.tsx`; sección en `/resultados`; fila IV en `src/app/page.tsx`; README (tabla de temas, estado) y `docs/decisiones.md` si surge algo ambiguo | Criterios de aceptación 1–8; `pnpm build` pasa; sin errores en consola |

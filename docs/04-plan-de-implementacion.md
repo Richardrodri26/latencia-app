@@ -21,7 +21,7 @@ Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios d
 - Instalar dependencias (ver README). Configurar Vitest y el script `typecheck`.
 - Layout con navbar (Inicio, Experimento, Datos, Resultados, Muestreo) y providers.
 
-**Aceptación:** `npm run dev` muestra la navbar; `npm run lint`, `npm run typecheck` y `npm test` pasan.
+**Aceptación:** `pnpm dev` muestra la navbar; `pnpm lint`, `pnpm typecheck` y `pnpm test` pasan.
 
 ## Hito 1 · Estadística pura (`src/lib/stats`)
 - `distributions.ts`, `descriptive.ts`, `intervals.ts`, `sampleSize.ts`, `sampling.ts` e `interpret.ts`, según [02-especificacion-estadistica.md](02-especificacion-estadistica.md).
@@ -59,7 +59,7 @@ Implementar **en orden**. No pasar al siguiente hito sin cumplir los criterios d
 - `public/data/respaldo.csv` con datos **reales** recolectados con la app desde el equipo y la red de los integrantes (dataset de respaldo listo).
 - Revisar que el README esté al día.
 
-**Aceptación:** flujo completo Piloto → Tamaño de muestra → Experimento → Resultados sin errores en consola; `npm run build` exitoso.
+**Aceptación:** flujo completo Piloto → Tamaño de muestra → Experimento → Resultados sin errores en consola; `pnpm build` exitoso.
 
 ## Hitos 8–11 · Alineación con la clase
 

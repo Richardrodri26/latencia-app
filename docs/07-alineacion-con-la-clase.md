@@ -188,7 +188,7 @@ Tarjetas, en este orden:
 
 ## 5. Hitos
 
-Cada hito termina con `npm run lint && npm run typecheck && npm test` en verde (y `npm run build` en el último). No pasar al siguiente sin cumplirlo.
+Cada hito termina con `pnpm lint && pnpm typecheck && pnpm test` en verde (y `pnpm build` en el último). No pasar al siguiente sin cumplirlo.
 
 | Hito | Trabajo | Definición de terminado |
 |------|---------|-------------------------|
