@@ -76,7 +76,6 @@ ALLOW_PRIVATE_URLS=false   # true solo para medir un backend propio en localhost
 
 | Documento | Contenido |
 |-----------|-----------|
-| [AGENTS.md](AGENTS.md) | Instrucciones para el agente que implementa |
 | [docs/01-planteamiento.md](docs/01-planteamiento.md) | Caso problema, objetivos, variables, muestreo y guion de la presentación |
 | [docs/02-especificacion-estadistica.md](docs/02-especificacion-estadistica.md) | Fórmulas, condiciones, interpretaciones y valores de prueba |
 | [docs/03-especificacion-tecnica.md](docs/03-especificacion-tecnica.md) | Arquitectura, esquemas, contrato de la API, páginas y componentes |
