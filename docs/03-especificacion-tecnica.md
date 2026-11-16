@@ -166,7 +166,7 @@ export async function measureOnce(url: string, timeoutMs: number) {
 
 ## Ejecución por lotes (`hooks/useRunExperiment.ts`)
 
-- `useMutation` de TanStack Query cuyo `mutationFn` recorre lotes: `totalPorAPI = warmup + samplesPerTarget`, en lotes de 2 por API (`BATCH_SIZE`; el contrato admite hasta 20, ver decisión 27). El cliente espera `delayMs` entre lotes. Ejecutar una fase reemplaza sus mediciones previas (decisión 28).
+- `useMutation` de TanStack Query cuyo `mutationFn` recorre lotes: `totalPorAPI = warmup + samplesPerTarget`, en lotes de 2 por API (`BATCH_SIZE`; el contrato admite hasta 20, ver decisión 27). El cliente espera `delayMs` entre lotes. Ejecutar una fase reemplaza sus mediciones previas **al llegar el primer lote**; si la ejecución falla o se cancela antes, se conservan (decisiones 28 y 71). El ciclo vive en `lib/runner.ts` (`runBatches`).
 - Tras cada lote se agregan las mediciones al contexto y se actualiza el progreso (`medidas / total`) en `RunProgress` (componente `Progress` de shadcn).
 - Botón **Cancelar** con `AbortController` en el cliente. Las mediciones ya recibidas se conservan.
 - Al terminar, `toast` (sonner) con un resumen: n válidos y fallos por API.

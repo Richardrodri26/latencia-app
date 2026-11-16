@@ -96,7 +96,7 @@ Cada diapositiva: título, objetivo, viñetas, visual. Ajustar a `[COMPLETAR: du
 - Población, unidad de muestreo y muestra · variables X, S, F, G · parámetros: μ, p (SLA), μ_A − μ_B, p_A − p_B. Visual: tabla de variables.
 
 ### 4.5 Diseño del experimento
-- **Piloto (30 por API) → Tamaño de muestra → Experimento principal**: el piloto da `s` para calcular *n*. · 3 peticiones de calentamiento (DNS/TLS en frío) descartadas · intercalado A/B · pausa de 100 ms · **secuencial y en el servidor** (`/api/measure`, sin medir en paralelo ni desde el navegador) · lotes de 2 por API · solo `ok = true` y `warmup = false` entran a la estadística · cada fase reemplaza sus datos.
+- **Piloto (30 por API) → Tamaño de muestra → Experimento principal**: el piloto da `s` para calcular *n*. · 3 peticiones de calentamiento (DNS/TLS en frío) descartadas · intercalado A/B · pausa de 100 ms · **secuencial y en el servidor** (`/api/measure`, sin medir en paralelo ni desde el navegador) · lotes de 2 por API · solo `ok = true` y `warmup = false` entran a la estadística · cada fase reemplaza sus datos al llegar el primer lote (si falla antes, se conservan los anteriores).
 - Visual: diagrama de arquitectura (docs/03) y línea A, B, A, B con las 3 primeras en gris. Dato opcional de calentamiento: `[COMPLETAR con la app: ruta /datos, filas con warmup = true, columna latencia de la primera petición a B]`.
 
 ### 4.6 Tamaño de muestra y TLC (Unidades I y II)
@@ -207,7 +207,7 @@ Ejemplos del cuaderno recalculados con SciPy (docs/02 y tests): días sin accide
 2. **`/experimento` · «Verificar APIs»:** 1 petición a cada API.
 3. **Piloto:** fase «piloto», 30 por API → «Ejecutar piloto»; mostrar el progreso (las 3 primeras son calentamiento). `[COMPLETAR: cronometrar el piloto en el ensayo]`.
 4. **`/muestreo` · Calculadora:** `s` del piloto, E y confianza; fórmula y sustitución; **«Usar este n»** (limita a 10–1000).
-5. **Experimento principal:** «Ejecutar experimento principal». Si esa fase ya tiene datos, pide confirmación y reemplaza solo esa fase.
+5. **Experimento principal:** «Ejecutar experimento principal». Si esa fase ya tiene datos, pide confirmación y reemplaza solo esa fase, y solo cuando llega el primer lote (si falla antes, se conservan los datos anteriores).
 6. **`/resultados`:** descriptivos e histogramas; tarjeta de la media (4 pasos, «Z con s porque n ≥ 30»); tarjeta de proporción SLA (A «no aplica», B 6 pasos); cambiar 95 % → 90 % → 99 %; `CiForestChart`; `ComparisonPanel` (regla del cero); **Prueba de hipótesis**: por defecto bilateral/α = 5 %/δ₀ = 0 → se rechaza H₀; cambiar H₁ a «<» (P.C.I. = −1.6449); luego δ₀ = −150 bilateral → se acepta H₀; `Recommendation`.
 7. **`/muestreo` · Simulador TLC:** variar *m* (2–100); comparar el histograma original (sesgado) con el de las medias.
 8. **`/datos`:** tabla, exportar CSV; importar el mismo CSV devuelve los mismos datos.

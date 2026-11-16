@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     if (blocked.length > 0) {
       return json(
         {
-          error: `URL no permitida: ${blocked[0].reason}. Solo http/https en hosts públicos (ALLOW_PRIVATE_URLS=false).`,
+          error: `URL no permitida: ${blocked[0].reason}. Solo se aceptan URLs http/https de hosts públicos.`,
           urls: blocked.map((b) => b.url),
           reasons: blocked.map((b) => b.reason),
         },

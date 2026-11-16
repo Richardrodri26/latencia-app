@@ -12,7 +12,7 @@ import { countPhase, replaceMessage } from "@/lib/measurements";
 import type { ExperimentConfig } from "@/lib/schemas";
 
 export default function ExperimentoPage() {
-  const { hydrated, config, measurements, status, progress, clearData } = useExperiment();
+  const { hydrated, config, measurements, status, progress, notice, waitSeconds, clearData } = useExperiment();
   const { run, cancel, isRunning } = useRunExperiment();
 
   // Reemplazar es destructivo: si la fase ya tiene datos, se pide confirmación antes de medir.
@@ -51,7 +51,7 @@ export default function ExperimentoPage() {
           <CardTitle>Progreso</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <RunProgress status={status} progress={progress} />
+          <RunProgress status={status} progress={progress} waitSeconds={waitSeconds} notice={notice} />
           <h2 className="text-sm font-semibold">Últimas 10 mediciones</h2>
           <LastMeasurements measurements={measurements} />
           <Button

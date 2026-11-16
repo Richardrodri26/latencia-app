@@ -71,6 +71,8 @@ describe("POST /api/measure", () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.urls).toEqual(["http://192.168.1.10/api"]);
+    expect(json.error).toContain("URL no permitida");
+    expect(json.error).not.toContain("ALLOW_PRIVATE_URLS");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

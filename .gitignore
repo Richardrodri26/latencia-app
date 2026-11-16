@@ -42,3 +42,6 @@ next-env.d.ts
 
 # volcados de fallos de Git Bash
 *.stackdump
+
+.vercel
+.env*

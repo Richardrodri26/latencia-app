@@ -13,7 +13,7 @@ Leer en este orden:
 5. `docs/04-plan-de-implementacion.md` (el orden de trabajo y criterios de aceptación)
 6. `docs/07-alineacion-con-la-clase.md` (qué quitar y qué cambiar; hitos 8–11)
 7. `docs/06-pruebas-de-hipotesis.md` (prueba de hipótesis para la diferencia de medias; hitos 12–14)
-8. `docs/decisiones.md` (puntos ambiguos ya resueltos, hasta la 62; las 30–48 son las de la alineación con la clase, las 49–55 las de la prueba de hipótesis y el resto ajustes de interfaz y salvaguardas)
+8. `docs/decisiones.md` (puntos ambiguos ya resueltos, hasta la 73; las 30–48 son las de la alineación con la clase, las 49–55 las de la prueba de hipótesis y el resto ajustes de interfaz y salvaguardas)
 
 ## Reglas
 

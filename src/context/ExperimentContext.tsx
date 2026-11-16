@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { DEFAULT_CONFIG } from "@/lib/presets";
-import { removePhase } from "@/lib/measurements";
+import { applyBatch, type RunNotice } from "@/lib/measurements";
 import type { ConfidenceLevel, ExperimentConfig, Measurement, Phase } from "@/lib/schemas";
 import { clearState, loadState, saveState } from "@/lib/storage";
 
@@ -22,9 +22,15 @@ type State = {
   status: RunStatus;
   confidence: ConfidenceLevel;
   progress: Progress;
+  /** Mensaje persistente sobre cómo terminó la última ejecución (no se guarda en localStorage). */
+  notice: RunNotice | null;
+  /** Segundos que faltan de la espera por el límite de peticiones (429), o null. */
+  waitSeconds: number | null;
 };
 
 const INITIAL: State = {
+  notice: null,
+  waitSeconds: null,
   config: DEFAULT_CONFIG,
   measurements: [],
   status: "idle",
@@ -70,7 +76,10 @@ type Actions = {
   setProgress: (p: Progress) => void;
   addMeasurements: (m: Measurement[]) => void;
   replaceMeasurements: (m: Measurement[]) => void;
-  removePhaseMeasurements: (phase: Phase) => void;
+  /** Aplica un lote de la ejecución en curso; el primero reemplaza las mediciones previas de la fase. */
+  applyRunBatch: (phase: Phase, batch: Measurement[], first: boolean) => void;
+  setNotice: (n: RunNotice | null) => void;
+  setWaitSeconds: (s: number | null) => void;
   clearData: () => void;
 };
 
@@ -97,13 +106,18 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
     [],
   );
   const replaceMeasurements = useCallback((m: Measurement[]) => update({ measurements: m }), []);
-  const removePhaseMeasurements = useCallback(
-    (phase: Phase) => update({ measurements: removePhase(getSnapshot().measurements, phase) }),
+  const applyRunBatch = useCallback(
+    (phase: Phase, batch: Measurement[], first: boolean) =>
+      update({ measurements: applyBatch(getSnapshot().measurements, phase, batch, first) }),
     [],
   );
+  const setNotice = useCallback((notice: RunNotice | null) => update({ notice }), []);
+  const setWaitSeconds = useCallback((waitSeconds: number | null) => update({ waitSeconds }), []);
   const clearData = useCallback(() => {
     clearState();
     update({
+      notice: null,
+      waitSeconds: null,
       measurements: [],
       status: "idle",
       progress: { done: 0, total: 0 },
@@ -120,7 +134,9 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
       setProgress,
       addMeasurements,
       replaceMeasurements,
-      removePhaseMeasurements,
+      applyRunBatch,
+      setNotice,
+      setWaitSeconds,
       clearData,
     }),
     [
@@ -132,7 +148,9 @@ export function ExperimentProvider({ children }: { children: ReactNode }) {
       setProgress,
       addMeasurements,
       replaceMeasurements,
-      removePhaseMeasurements,
+      applyRunBatch,
+      setNotice,
+      setWaitSeconds,
       clearData,
     ],
   );
