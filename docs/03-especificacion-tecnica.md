@@ -32,7 +32,7 @@ Navegador (React)                                 Servidor Next.js (Node)
 
 - **La medición se hace en el servidor (Route Handler)**. Así se evita CORS y las mediciones son homogéneas.
 - **El análisis se hace en el cliente**: `lib/stats` son funciones puras que se recalculan con `useMemo` al cambiar el nivel de confianza.
-- **Para la sustentación se ejecuta en local** (`pnpm dev` o `pnpm build && ppnpm start`). En Vercel la medición saldría desde el datacenter de Vercel, no desde el equipo y la red de los integrantes.
+- **Para la sustentación se ejecuta en local** (`pnpm dev` o `pnpm build && pnpm start`). En Vercel la medición saldría desde el datacenter de Vercel, no desde el equipo y la red de los integrantes.
 
 ## Estructura de carpetas
 
@@ -135,7 +135,8 @@ El esquema del formulario de la prueba de hipótesis (`hypothesisFormSchema`, `A
 - **Respuesta 200:** `{ measurements: Measurement[] }`.
 - **Orden:** `intercalado` = A, B, A, B…; `aleatorio` = barajar (Fisher‑Yates) la lista de peticiones del lote.
 - Pausa de `delayMs` entre peticiones consecutivas. Las peticiones son **secuenciales**, nunca en paralelo, porque la concurrencia distorsiona las latencias.
-- **Seguridad:** aceptar solo `http`/`https`. Si `process.env.ALLOW_PRIVATE_URLS !== 'true'`, rechazar hosts `localhost`, `127.*`, `10.*`, `192.168.*`, `172.16–31.*` y `169.254.*`.
+- **Seguridad (endurecida, decisiones 66–70 de `decisiones.md`):** solo `GET`, `http`/`https`, sin credenciales en la URL, puertos 80/443/8080/8443 (o el por defecto), longitud ≤ 2048. Si `ALLOW_PRIVATE_URLS !== 'true'` se rechazan hosts locales/privados (literales y nombres internos) y también los nombres que **resuelven por DNS** a cualquier IP privada, loopback, link-local (incl. 169.254.169.254), CGNAT, multicast, sin especificar o sus equivalentes IPv6 (incl. IPv4-mapped). Las redirecciones se siguen a mano (máx. 3) validando cada destino; el cuerpo se lee con tope de 5 MiB; timeout por petición con `AbortSignal.timeout`.
+- **Límites:** cuerpo ≤ 16 KiB (413), `Content-Type: application/json` (415), `countPerTarget` ≤ 10, peor caso `2·n·timeout + (2·n−1)·pausa` ≤ 55 s, `export const maxDuration = 60`. POST de otro origen → 403. Por IP: 120 peticiones/min y 1 en curso (429 con `Retry-After`).
 
 Medición de una petición (`measure.server.ts`):
 

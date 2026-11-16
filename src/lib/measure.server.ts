@@ -1,3 +1,4 @@
+import { checkUrl } from "@/lib/urlGuard.server";
 import type { Measurement, MeasureRequest, TargetId } from "@/lib/schemas";
 
 export type SingleResult = {
@@ -8,36 +9,85 @@ export type SingleResult = {
   error: "timeout" | "network" | "http" | null;
 };
 
-/** Mide una petición GET incluyendo la descarga completa del cuerpo. */
-export async function measureOnce(url: string, timeoutMs: number): Promise<SingleResult> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const start = performance.now();
+/** Tope del cuerpo que se descarga por medición (se lee y descarta; nunca se acumula en memoria). */
+export const MAX_BODY_BYTES = 5 * 1024 * 1024;
+/** Saltos de redirección que se siguen (cada uno se valida como una URL nueva). */
+export const MAX_REDIRECTS = 3;
+
+const REDIRECT_STATUS = new Set([301, 302, 303, 307, 308]);
+
+/** Lee y descarta el cuerpo contando bytes; devuelve truncated=true si supera el tope. */
+async function drainBody(res: Response, cap: number): Promise<{ bytes: number; truncated: boolean }> {
+  const declared = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > cap) {
+    await res.body?.cancel().catch(() => undefined);
+    return { bytes: 0, truncated: true };
+  }
+  if (!res.body) return { bytes: 0, truncated: false };
+  const reader = res.body.getReader();
+  let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > cap) {
+      await reader.cancel().catch(() => undefined);
+      return { bytes, truncated: true };
+    }
+  }
+  return { bytes, truncated: false };
+}
+
+/**
+ * Mide una petición GET incluyendo la descarga completa del cuerpo (hasta MAX_BODY_BYTES).
+ *
+ * Redirecciones: se siguen a mano hasta MAX_REDIRECTS saltos y cada destino se valida igual que la URL
+ * inicial (un redirect a un host privado se rechaza). La latencia es la SUMA de los tiempos de red de cada
+ * salto (fetch + lectura del cuerpo); la validación DNS entre saltos no cuenta. El timeout cubre toda la cadena.
+ */
+export async function measureOnce(url: string, timeoutMs: number, abortSignal?: AbortSignal): Promise<SingleResult> {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = abortSignal ? AbortSignal.any([timeout, abortSignal]) : timeout;
+  const fail = (): SingleResult => ({
+    latencyMs: null,
+    status: null,
+    ok: false,
+    bytes: null,
+    error: timeout.aborted ? "timeout" : "network",
+  });
+
+  let current = url;
+  let elapsed = 0;
   try {
-    const res = await fetch(url, {
-      cache: "no-store",
-      signal: controller.signal,
-      headers: { "cache-control": "no-cache", "user-agent": "LatenciaLab/1.0 (proyecto academico)" },
-    });
-    const body = await res.arrayBuffer();
-    const latencyMs = performance.now() - start;
-    return {
-      latencyMs,
-      status: res.status,
-      ok: res.ok,
-      bytes: body.byteLength,
-      error: res.ok ? null : "http",
-    };
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const check = await checkUrl(current);
+      if (!check.ok) return fail();
+
+      const t0 = performance.now();
+      const res = await fetch(current, {
+        method: "GET",
+        redirect: "manual",
+        cache: "no-store",
+        signal,
+        headers: { "cache-control": "no-cache", "user-agent": "LatenciaLab/1.0 (proyecto academico)" },
+      });
+
+      const location = res.headers.get("location");
+      if (REDIRECT_STATUS.has(res.status) && location) {
+        await res.body?.cancel().catch(() => undefined);
+        elapsed += performance.now() - t0;
+        current = new URL(location, current).href;
+        continue;
+      }
+
+      const { bytes, truncated } = await drainBody(res, MAX_BODY_BYTES);
+      elapsed += performance.now() - t0;
+      if (truncated) return fail();
+      return { latencyMs: elapsed, status: res.status, ok: res.ok, bytes, error: res.ok ? null : "http" };
+    }
+    return fail(); // demasiadas redirecciones
   } catch {
-    return {
-      latencyMs: null,
-      status: null,
-      ok: false,
-      bytes: null,
-      error: controller.signal.aborted ? "timeout" : "network",
-    };
-  } finally {
-    clearTimeout(timer);
+    return fail();
   }
 }
 
@@ -64,7 +114,7 @@ export function buildOrder(count: number, order: "intercalado" | "aleatorio"): T
  * Mide un lote de forma SECUENCIAL (nunca en paralelo, la concurrencia distorsiona
  * las latencias), con una pausa de delayMs entre peticiones consecutivas.
  */
-export async function measureBatch(req: MeasureRequest): Promise<Measurement[]> {
+export async function measureBatch(req: MeasureRequest, signal?: AbortSignal): Promise<Measurement[]> {
   const urls: Record<TargetId, string> = { A: req.targets[0].url, B: req.targets[1].url };
   const sequence = buildOrder(req.countPerTarget, req.order);
   const seen: Record<TargetId, number> = { A: 0, B: 0 };
@@ -72,12 +122,14 @@ export async function measureBatch(req: MeasureRequest): Promise<Measurement[]> 
 
   for (let i = 0; i < sequence.length; i++) {
     if (i > 0 && req.delayMs > 0) await sleep(req.delayMs);
+    if (signal?.aborted) break; // el cliente canceló: se devuelve lo medido hasta ahora
     const target = sequence[i];
     const warmup = seen[target] < req.warmupRemaining;
     seen[target]++;
     const seq = req.seqOffset + i;
     const startedAt = new Date().toISOString();
-    const result = await measureOnce(urls[target], req.timeoutMs);
+    const result = await measureOnce(urls[target], req.timeoutMs, signal);
+    if (signal?.aborted) break;
     out.push({
       id: `${req.runId}-${seq}`,
       runId: req.runId,
@@ -92,27 +144,4 @@ export async function measureBatch(req: MeasureRequest): Promise<Measurement[]> 
   return out;
 }
 
-/** Hosts privados o locales que se rechazan salvo ALLOW_PRIVATE_URLS=true. */
-export function isPrivateHost(hostname: string): boolean {
-  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (h === "localhost" || h.endsWith(".localhost") || h === "::1" || h === "0.0.0.0") return true;
-  if (/^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h)) return true;
-  const m = /^172\.(\d{1,3})\./.exec(h);
-  if (m) {
-    const second = Number(m[1]);
-    if (second >= 16 && second <= 31) return true;
-  }
-  return false;
-}
-
-export function urlAllowed(raw: string): boolean {
-  let u: URL;
-  try {
-    u = new URL(raw);
-  } catch {
-    return false;
-  }
-  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-  if (process.env.ALLOW_PRIVATE_URLS === "true") return true;
-  return !isPrivateHost(u.hostname);
-}
+export { isPrivateHost, urlAllowed } from "@/lib/urlGuard.server";

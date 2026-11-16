@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -22,10 +23,12 @@ type Props = {
 
 /** Envía al padre los valores solo cuando pasan el esquema; si no, el padre conserva el último válido. */
 function EmitValid({ values, onChange }: { values: unknown; onChange: Props["onChange"] }) {
+  // Pacer: al teclear δ₀ no se recalcula la prueba en cada tecla, solo al pausar 150 ms.
+  const emit = useDebouncedCallback(onChange, { wait: 150 });
   useEffect(() => {
     const parsed = hypothesisFormSchema.safeParse(values);
-    if (parsed.success) onChange(parsed.data);
-  }, [values, onChange]);
+    if (parsed.success) emit(parsed.data);
+  }, [values, emit]);
   return null;
 }
 

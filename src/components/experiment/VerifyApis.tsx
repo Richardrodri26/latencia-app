@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { useThrottledCallback } from "@tanstack/react-pacer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { postMeasure } from "@/hooks/useRunExperiment";
@@ -25,9 +26,12 @@ export function VerifyApis({ targets, timeoutMs, disabled }: Props) {
       }),
   });
 
+  // Pacer: evita ráfagas de clics (solo se atiende el primero cada 2 s).
+  const verify = useThrottledCallback(() => mutation.mutate(), { wait: 2000, trailing: false });
+
   return (
     <div className="space-y-2">
-      <Button type="button" variant="outline" disabled={disabled || mutation.isPending} onClick={() => mutation.mutate()}>
+      <Button type="button" variant="outline" disabled={disabled || mutation.isPending} onClick={() => verify()}>
         {mutation.isPending ? "Verificando..." : "Verificar APIs"}
       </Button>
       {mutation.isError && (

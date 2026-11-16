@@ -2,9 +2,11 @@
 
 import { useCallback, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useRateLimiter } from "@tanstack/react-pacer";
 import { toast } from "sonner";
 import { useExperiment } from "@/context/ExperimentContext";
 import {
+  maxCountForBudget,
   measurementSchema,
   type ExperimentConfig,
   type Measurement,
@@ -14,6 +16,24 @@ import { z } from "zod";
 
 /** Peticiones por API en cada lote (la especificación permite "hasta 10"). Lotes chicos = progreso fluido y menos pérdida al cancelar. */
 const BATCH_SIZE = 2;
+
+/** Tope de lotes por minuto del cliente (el servidor admite 120): nunca se envía más de lo que el servidor permite. */
+const CLIENT_MAX_BATCHES_PER_MIN = 100;
+/** Reintentos ante un 429 del servidor (se espera Retry-After entre cada uno). */
+const MAX_429_RETRIES = 3;
+const MAX_RETRY_WAIT_MS = 30_000;
+
+/** Error HTTP de /api/measure; conserva el estado y el Retry-After para decidir si reintentar. */
+export class MeasureApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly retryAfterMs: number | null,
+  ) {
+    super(message);
+    this.name = "MeasureApiError";
+  }
+}
 
 /** Espera delayMs entre lotes (el servidor solo pausa dentro de un lote); se interrumpe al cancelar. */
 function pause(ms: number, signal: AbortSignal): Promise<void> {
@@ -44,7 +64,8 @@ export async function postMeasure(body: MeasureRequest, signal?: AbortSignal): P
       json && typeof json === "object" && "error" in json && typeof json.error === "string"
         ? json.error
         : "La solicitud de medición no es válida";
-    throw new Error(msg);
+    const retry = Number(res.headers.get("retry-after"));
+    throw new MeasureApiError(msg, res.status, Number.isFinite(retry) && retry > 0 ? retry * 1000 : null);
   }
   return responseSchema.parse(json).measurements;
 }
@@ -67,6 +88,12 @@ function summarize(ms: Measurement[], names: [string, string]): string {
 export function useRunExperiment() {
   const { addMeasurements, removePhaseMeasurements, setStatus, setProgress, setConfig } = useExperiment();
   const controllerRef = useRef<AbortController | null>(null);
+  // Pacer: ventana deslizante en el cliente para no superar el límite del servidor.
+  const sendLimiter = useRateLimiter(() => undefined, {
+    limit: CLIENT_MAX_BATCHES_PER_MIN,
+    window: 60_000,
+    windowType: "sliding",
+  });
 
   const mutation = useMutation({
     mutationFn: async (config: ExperimentConfig) => {
@@ -84,15 +111,36 @@ export function useRunExperiment() {
       let doneTarget = 0;
       setProgress({ done: 0, total });
 
+      const batchSize = Math.min(BATCH_SIZE, maxCountForBudget(config.timeoutMs, config.delayMs));
+
+      /** Espera un hueco en la ventana del limitador y envía; ante un 429 espera Retry-After y reintenta (acotado). */
+      const send = async (body: MeasureRequest): Promise<Measurement[]> => {
+        for (let attempt = 0; ; attempt++) {
+          while (!sendLimiter.maybeExecute()) {
+            await pause(Math.max(50, sendLimiter.getMsUntilNextWindow()), controller.signal);
+            if (controller.signal.aborted) throw new DOMException("Cancelado", "AbortError");
+          }
+          try {
+            return await postMeasure(body, controller.signal);
+          } catch (error) {
+            if (!(error instanceof MeasureApiError) || error.status !== 429) throw error;
+            if (attempt >= MAX_429_RETRIES) {
+              throw new MeasureApiError(`${error.message} Se conservó lo medido hasta ahora.`, 429, error.retryAfterMs);
+            }
+            await pause(Math.min(error.retryAfterMs ?? 2000, MAX_RETRY_WAIT_MS), controller.signal);
+            if (controller.signal.aborted) throw new DOMException("Cancelado", "AbortError");
+          }
+        }
+      };
+
       try {
         while (doneTarget < perTarget) {
           if (doneTarget > 0) {
             await pause(config.delayMs, controller.signal);
             if (controller.signal.aborted) throw new DOMException("Cancelado", "AbortError");
           }
-          const count = Math.min(BATCH_SIZE, perTarget - doneTarget);
-          const batch = await postMeasure(
-            {
+          const count = Math.min(batchSize, perTarget - doneTarget);
+          const batch = await send({
               runId,
               phase: config.phase,
               targets: config.targets,
@@ -102,9 +150,7 @@ export function useRunExperiment() {
               delayMs: config.delayMs,
               timeoutMs: config.timeoutMs,
               order: config.order,
-            },
-            controller.signal,
-          );
+          });
           addMeasurements(batch);
           collected.push(...batch);
           doneTarget += count;

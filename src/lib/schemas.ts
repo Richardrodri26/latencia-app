@@ -41,17 +41,55 @@ export const measurementSchema = z.object({
   warmup: z.boolean(),
 });
 
-export const measureRequestSchema = z.object({
-  runId: z.string().min(1),
-  phase: phaseSchema,
-  targets: z.tuple([targetSchema, targetSchema]),
-  countPerTarget: z.number().int().min(1).max(20),
-  seqOffset: z.number().int().min(0),
-  warmupRemaining: z.number().int().min(0).max(10),
-  delayMs: z.number().int().min(0).max(2000),
-  timeoutMs: z.number().int().min(500).max(15000),
-  order: orderSchema,
+/**
+ * Límites de /api/measure (docs/decisiones.md, decisión 68).
+ * MAX_DURATION_S debe coincidir con `export const maxDuration` de la ruta (Next exige un literal ahí; lo verifica un test).
+ */
+export const MAX_DURATION_S = 60;
+/** Presupuesto de una petición: maxDuration menos 5 s de margen (DNS, arranque, serialización). */
+export const MAX_BATCH_BUDGET_MS = (MAX_DURATION_S - 5) * 1000;
+export const MAX_URL_LENGTH = 2048;
+export const MAX_COUNT_PER_TARGET = 10;
+export const MAX_BODY_BYTES_IN = 16 * 1024;
+
+/** Peor caso: todas las peticiones del lote agotan el timeout, con la pausa entre ellas. */
+export function worstCaseBatchMs(countPerTarget: number, timeoutMs: number, delayMs: number): number {
+  const n = countPerTarget * 2;
+  return n * timeoutMs + (n - 1) * delayMs;
+}
+
+/** Mayor countPerTarget cuyo peor caso cabe en el presupuesto (mínimo 1). */
+export function maxCountForBudget(timeoutMs: number, delayMs: number): number {
+  const n = Math.floor((MAX_BATCH_BUDGET_MS + delayMs) / (timeoutMs + delayMs));
+  return Math.max(1, Math.min(MAX_COUNT_PER_TARGET, Math.floor(n / 2)));
+}
+
+const measureTargetSchema = z.object({
+  id: targetIdSchema,
+  name: z.string().min(1).max(40),
+  url: z.url({ protocol: /^https?$/, error: "Ingresa una URL válida (http o https)" }).max(MAX_URL_LENGTH, "URL demasiado larga"),
 });
+
+export const measureRequestSchema = z
+  .object({
+    runId: z.string().min(1).max(64),
+    phase: phaseSchema,
+    targets: z.tuple([measureTargetSchema, measureTargetSchema]),
+    countPerTarget: z.number().int().min(1).max(MAX_COUNT_PER_TARGET),
+    seqOffset: z.number().int().min(0).max(100_000),
+    warmupRemaining: z.number().int().min(0).max(10),
+    delayMs: z.number().int().min(0).max(2000),
+    timeoutMs: z.number().int().min(500).max(15000),
+    order: orderSchema,
+  })
+  .refine((r) => r.warmupRemaining <= r.countPerTarget, {
+    path: ["warmupRemaining"],
+    error: "El calentamiento no puede superar la cantidad por API",
+  })
+  .refine((r) => worstCaseBatchMs(r.countPerTarget, r.timeoutMs, r.delayMs) <= MAX_BATCH_BUDGET_MS, {
+    path: ["countPerTarget"],
+    error: `El peor caso (cantidad × 2 × (timeout + pausa)) supera el tiempo máximo de ${MAX_BATCH_BUDGET_MS / 1000} s de una petición`,
+  });
 
 export type Phase = z.infer<typeof phaseSchema>;
 export type TargetId = z.infer<typeof targetIdSchema>;

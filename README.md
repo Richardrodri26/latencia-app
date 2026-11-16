@@ -33,11 +33,11 @@ Solo se usan los procedimientos vistos en clase («no añadir más de lo que nos
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zod · TanStack Query · TanStack Form · TanStack Table · jstat · Vitest
+Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zod · TanStack Query · TanStack Form · TanStack Table · TanStack Pacer · jstat · Vitest
 
 ## Estado del proyecto
 
-Implementados los hitos 0 a 14. Los hitos 0–7 construyeron la app (estadística pura, medición en el servidor en `/api/measure`, experimento con progreso y cancelación, datos con CSV/JSON, resultados, muestreo y pulido). Los hitos 8–11 la alinearon con los procedimientos de clase ([docs/07](docs/07-alineacion-con-la-clase.md)): se quitaron los intervalos de varianza, desviación, razón de varianzas, Welch y la advertencia de asimetría; el IC de la media es uno solo (Z con s si n ≥ 30, t si n < 30; Z con σ si fuera conocida) y se muestra con los pasos de clase (4 para la media, 6 para la proporción, con «no aplica» si no se cumple n·p̂ ≥ 5 y n·q̂ ≥ 5); la diferencia de medias usa Z (n_A, n_B ≥ 30) o t con Sp (muestras pequeñas); y la recomendación sigue la regla media → SLA → sin evidencia. Los hitos 12–14 agregaron la **prueba de hipótesis para la diferencia de medias** (Unidad IV, [docs/06](docs/06-pruebas-de-hipotesis.md)) en `/resultados`: H₀ y H₁ (<, >, ≠), α de 1, 5 o 10 %, δ₀ editable, variante Z o t con Sp, puntos críticos P.C.I./P.C.S., zona de aceptación / región crítica con su curva, p-valor y conclusión con «se acepta H₀» / «se rechaza H₀», en los 4 pasos de clase. La lógica está en `src/lib/stats/hypothesis.ts` (con `zCdf`, `tCdf`) y los textos en `src/lib/hypothesisText.ts`. `lint`, `typecheck`, `test` (200 pruebas, incluidas las de los ejemplos del cuaderno, el dataset de respaldo, los textos de los pasos, la prueba de hipótesis y el render de `/resultados`) y `build` pasan. Las decisiones sobre puntos ambiguos están en [docs/decisiones.md](docs/decisiones.md).
+Implementados los hitos 0 a 14. Los hitos 0–7 construyeron la app (estadística pura, medición en el servidor en `/api/measure`, experimento con progreso y cancelación, datos con CSV/JSON, resultados, muestreo y pulido). Los hitos 8–11 la alinearon con los procedimientos de clase ([docs/07](docs/07-alineacion-con-la-clase.md)): se quitaron los intervalos de varianza, desviación, razón de varianzas, Welch y la advertencia de asimetría; el IC de la media es uno solo (Z con s si n ≥ 30, t si n < 30; Z con σ si fuera conocida) y se muestra con los pasos de clase (4 para la media, 6 para la proporción, con «no aplica» si no se cumple n·p̂ ≥ 5 y n·q̂ ≥ 5); la diferencia de medias usa Z (n_A, n_B ≥ 30) o t con Sp (muestras pequeñas); y la recomendación sigue la regla media → SLA → sin evidencia. Los hitos 12–14 agregaron la **prueba de hipótesis para la diferencia de medias** (Unidad IV, [docs/06](docs/06-pruebas-de-hipotesis.md)) en `/resultados`: H₀ y H₁ (<, >, ≠), α de 1, 5 o 10 %, δ₀ editable, variante Z o t con Sp, puntos críticos P.C.I./P.C.S., zona de aceptación / región crítica con su curva, p-valor y conclusión con «se acepta H₀» / «se rechaza H₀», en los 4 pasos de clase. La lógica está en `src/lib/stats/hypothesis.ts` (con `zCdf`, `tCdf`) y los textos en `src/lib/hypothesisText.ts`. `lint`, `typecheck`, `test` (240 pruebas, incluidas las de los ejemplos del cuaderno, el dataset de respaldo, los textos de los pasos, la prueba de hipótesis y el render de `/resultados`) y `build` pasan. Las decisiones sobre puntos ambiguos están en [docs/decisiones.md](docs/decisiones.md).
 
 **Pendiente:** la verificación visual en navegador de `/`, `/resultados` (incluida la curva de la prueba de hipótesis) y `/muestreo` (consola sin errores): los criterios de la UI se comprobaron con pruebas de render en el servidor y con `pnpm build`, no en un navegador. La presentación ya se rehízo con los procedimientos de clase.
 
@@ -67,6 +67,17 @@ Variables de entorno (`.env.local`, opcional):
 ```
 ALLOW_PRIVATE_URLS=false   # true solo para medir un backend propio en localhost
 ```
+
+## Despliegue
+
+> **Advertencia: para el estudio real, ejecutar en local.** Si se despliega en Vercel (o en cualquier servidor), las latencias se miden **desde el datacenter de Vercel, no desde el equipo ni la red de los integrantes**; los resultados describirían otra cosa. El despliegue público sirve para demostrar la app, no para recolectar los datos del estudio.
+
+Si se despliega de forma pública:
+
+- `ALLOW_PRIVATE_URLS` debe ser `false` (o no estar definida) en producción. Con `true`, `/api/measure` aceptaría `localhost` y redes privadas.
+- `/api/measure` hace peticiones a URLs que escribe el usuario, así que está protegido (decisiones 66–70 de [docs/decisiones.md](docs/decisiones.md)): validación SSRF con DNS, redirecciones validadas, tope de cuerpo, límites de tamaño y duración (`maxDuration = 60` s), máximo 120 peticiones/min y 1 simultánea por IP, y rechazo de POST de otros orígenes.
+- El limitador vive en la memoria de cada instancia serverless: es de mejor esfuerzo, no un límite global.
+- Un lote cabe en 55 s en el peor caso; con timeout 15 s y pausa 2 s el cliente baja solo a 1 petición por API por lote.
 
 ## Uso (flujo de la sustentación)
 
